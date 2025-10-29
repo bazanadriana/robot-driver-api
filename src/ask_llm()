@@ -1,0 +1,112 @@
+def ask_llm(goal: str, page_state: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Rule-based planner (no API yet).
+    We now also try to handle the anti-bot gate.
+    """
+
+    url = page_state.get("url", "")
+    snapshot = page_state.get("snapshot", [])
+
+    # Helper: check if the normal Amazon search box appears in snapshot
+    def has_search_box():
+        for node in snapshot:
+            sel = (node.get("selector_guess") or "").lower()
+            if "#twotabsearchtextbox" in sel or "twotabsearchtextbox" in sel:
+                return True
+        return False
+
+    # Helper: check if we see a 'Continue shopping' style button
+    def sees_continue_shopping():
+        for node in snapshot:
+            text = (node.get("text") or "").strip().lower()
+            if "continue shopping" in text:
+                return True
+        return False
+
+    # CASE 0: bot gate
+    if sees_continue_shopping() and not has_search_box():
+        # ask executor to click the button first
+        return [
+            {
+                "action": "click",
+                "selector": "text=Continue shopping"
+            },
+            {
+                "action": "wait_for_selector",
+                "selector": "#twotabsearchtextbox"
+            }
+        ]
+
+    # CASE 1: "homepage" (we can see the search box)
+    if "amazon.com" in url and "s?k=" not in url and "/dp/" not in url and has_search_box():
+        return [
+            {
+                "action": "wait_for_selector",
+                "selector": "#twotabsearchtextbox"
+            },
+            {
+                "action": "fill",
+                "selector": "#twotabsearchtextbox",
+                "value": goal
+            },
+            {
+                "action": "click",
+                "selector": "#nav-search-submit-button"
+            },
+            {
+                "action": "wait_for_selector",
+                "selector": "div.s-main-slot h2 a[href*='/dp/']"
+            }
+        ]
+
+
+    # CASE 2: search results page
+    if "s?k=" in url:
+        return [
+            {
+                "action": "wait_for_selector",
+                "selector": "div.s-main-slot h2 a[href*='/dp/']"
+            },
+            {
+                "action": "click",
+                "selector": "div.s-main-slot h2 a[href*='/dp/']"
+            },
+            {
+                "action": "wait_for_selector",
+                "selector": "#productTitle"
+            }
+        ]
+
+
+    # CASE 3: product page
+    if "/dp/" in url:
+        return [
+            {
+                "action": "wait_for_selector",
+                "selector": "#corePriceDisplay_desktop_feature_div span.a-offscreen"
+            },
+            {
+                "action": "extract_text",
+                "selector": "#corePriceDisplay_desktop_feature_div span.a-offscreen"
+            },
+            {
+                "action": "extract_text",
+                "selector": "#productTitle"
+            },
+            {
+                "action": "final_answer",
+                "result": "Scraped price and title from product page"
+            }
+        ]
+
+    # CASE 4: fallback: go to homepage (again)
+    return [
+        {
+            "action": "goto",
+            "url": "https://www.amazon.com/"
+        },
+        {
+            "action": "wait_for_selector",
+            "selector": "text=Continue shopping"
+        }
+    ]

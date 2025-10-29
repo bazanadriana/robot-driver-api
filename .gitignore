@@ -1,0 +1,100 @@
+# -------------------------
+# Python / Build Artifacts
+# -------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+
+# Byte-compiled / optimized / DLL files
+*$py.class
+
+# pytest / coverage (if added later)
+.coverage
+htmlcov/
+.pytest_cache/
+
+# -------------------------
+# Virtual Environments
+# -------------------------
+.venv/
+.venv*/        # e.g. .venv312/
+venv/
+env/
+ENV/
+*.env.bak
+*.env.old
+
+# -------------------------
+# Environment / Secrets
+# -------------------------
+.env
+*.env.local
+.envrc
+amazon_state.json
+debug.html      # saved DOM dump when blocked
+
+# -------------------------
+# Playwright / Browser State
+# -------------------------
+playwright-report/
+playwright/.cache/
+test-results/
+*.log
+
+# Chromium user data/state (session cookies etc)
+*.state.json
+*.state
+*.har
+
+# -------------------------
+# OS / Editor / Tooling
+# -------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains (PyCharm, etc.)
+.idea/
+
+# Backup / temp files
+*~
+*.swp
+*.swo
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# -------------------------
+# Node leftovers (just in case)
+# -------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -------------------------
+# Local runtime / generated
+# -------------------------
+*.sqlite3
+*.db
+*.pid
+*.sock
+
+# Uvicorn / server reload artifacts
+*.reload

@@ -1,0 +1,8 @@
+playwright
+openai
+python-dotenv
+typing-extensions
+requests
+fastapi
+uvicorn[standard]
+pydantic
