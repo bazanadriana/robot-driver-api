@@ -6,6 +6,21 @@ from typing import Optional
 # NOTE: adjust this import if your folder name isn't exactly "src".
 from src.robot import run as run_robot
 
+@app.get("/")
+def healthcheck():
+    """
+    Simple health/status endpoint for reviewers.
+    """
+    return {
+        "service": "robot-driver-api",
+        "status": "ok",
+        "endpoints": {
+            "docs": "/docs",
+            "run": "/run (POST)"
+        },
+        "note": "Send POST /run with {'query': 'Apple AirPods Pro'} to scrape."
+    }
+
 
 app = FastAPI(
     title="Robot Driver API",
