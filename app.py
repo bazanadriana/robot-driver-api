@@ -2,9 +2,29 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-# We import the richer "run" function from robot.py
-# NOTE: adjust this import if your folder name isn't exactly "src".
+# Import browser automation runner from robot.py
+# (Make sure you're running uvicorn from the project root so `src` is importable)
 from src.robot import run as run_robot
+
+
+# ---------------------------
+# FastAPI app definition
+# ---------------------------
+
+app = FastAPI(
+    title="Robot Driver API",
+    description=(
+        "API to scrape Amazon for the first matching product. "
+        "It can log in (if creds are provided), open the first search result, "
+        "and return title / price / product URL."
+    ),
+    version="1.1.0",
+)
+
+
+# ---------------------------
+# Healthcheck / root route
+# ---------------------------
 
 @app.get("/")
 def healthcheck():
@@ -22,18 +42,9 @@ def healthcheck():
     }
 
 
-app = FastAPI(
-    title="Robot Driver API",
-    description=(
-        "API to scrape Amazon for the first matching product. "
-        "It can log in (if creds are provided), open the first search result, "
-        "and return title / price / product URL."
-    ),
-    version="1.1.0",
-)
-
-
-# ----------- Request / Response Models -----------
+# ---------------------------
+# Request / Response Models
+# ---------------------------
 
 class RunRequest(BaseModel):
     query: str  # e.g. "Apple AirPods Pro"
@@ -48,7 +59,9 @@ class RunResponse(BaseModel):
     reason: Optional[str] = None # error message (if failure)
 
 
-# ----------- Endpoint -----------
+# ---------------------------
+# /run endpoint
+# ---------------------------
 
 @app.post("/run", response_model=RunResponse)
 def run_agent(req: RunRequest):
@@ -81,12 +94,12 @@ def run_agent(req: RunRequest):
         # run_robot(query) returns: (title, price, url_or_err)
         title, price, url_or_err = run_robot(
             query=req.query,
-            stay_open=False,              # don't block the server waiting for ENTER
-            interactive_login=False       # don't pause for CAPTCHA/MFA in API mode
+            stay_open=False,        # don't block the server waiting for ENTER
+            interactive_login=False # don't pause for CAPTCHA/MFA in API mode
         )
 
     except Exception as e:
-        # If something goes really wrong at runtime:
+        # Something blew up at runtime (Playwright launch, network error, etc.)
         raise HTTPException(
             status_code=500,
             detail={
@@ -96,18 +109,18 @@ def run_agent(req: RunRequest):
             },
         )
 
-    # If we got a price, treat it as success.
+    # Success path: we found a price/title/url
     if price:
         return RunResponse(
             status="SUCCESS",
             query=req.query,
             title=title,
             price=price,
-            url=url_or_err,  # in success case, url_or_err is actually the product URL
+            url=url_or_err,  # in success case, url_or_err is actually the URL
             reason=None,
         )
 
-    # Otherwise it's a failure, and url_or_err contains the error string
+    # Failure path: could not get data (captcha, blocked, etc.)
     return RunResponse(
         status="FAILURE",
         query=req.query,
